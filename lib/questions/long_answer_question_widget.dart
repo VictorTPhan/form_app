@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_app/questions/question_widget.dart';
 
 class LongAnswerQuestionWidget extends QuestionWidget {
-  LongAnswerQuestionWidget({super.key, required String question}) : super(question: question);
+  LongAnswerQuestionWidget({required super.key, required String question}) : super(question: question);
 
   @override
   QuestionWidgetState createState() => LongAnswerQuestionWidgetState();
@@ -10,6 +10,19 @@ class LongAnswerQuestionWidget extends QuestionWidget {
 
 class LongAnswerQuestionWidgetState extends QuestionWidgetState {
   TextEditingController controller = TextEditingController();
+
+  @override
+  bool isFilledIn() {
+    return controller.text.isNotEmpty;
+  }
+
+  @override
+  dynamic getChoice() {
+    return {
+      "question": widget.question,
+      "answer": controller.text
+    };
+  }
 
   @override
   Widget displayAnswer() {

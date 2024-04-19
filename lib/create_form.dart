@@ -67,7 +67,14 @@ class _CreateFormState extends State<CreateForm> {
       if (response.statusCode == 200) {
         print('Response: ${response.body}');
         var jsonResponse = json.decode(response.body);
-        var generatedForm = GeneratedForm.fromJson(jsonResponse);
+        var generatedForm = GeneratedForm.fromJson(
+          jsonResponse,
+          goalController.text,
+          problemController.text,
+          formLengthController.text,
+          solutionController.text,
+          questionTypes.toList()
+        );
         navigateTo(context, ViewForm(generatedForm: generatedForm));
       } else {
         print('Request failed with status: ${response.statusCode}');
