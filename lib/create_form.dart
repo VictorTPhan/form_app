@@ -47,11 +47,16 @@ class _CreateFormState extends State<CreateForm> {
     var url = Uri.parse('https://form-app-server-zibv.onrender.com/create_form/');
 
     var payload = {
-      "GOAL": goalController.text,
-      "PROBLEM": problemController.text,
-      "FORM_LENGTH": formLengthController.text,
-      "ALLOWED_TYPES": questionTypes.toList().toString(),
-      "SOLUTION_TASK": solutionController.text
+      // "GOAL": goalController.text,
+      // "PROBLEM": problemController.text,
+      // "FORM_LENGTH": formLengthController.text,
+      // "ALLOWED_TYPES": questionTypes.toList().toString(),
+      // "SOLUTION_TASK": solutionController.text
+      "GOAL": "To cook some food for a potluck",
+      "PROBLEM": "I am not good at cooking",
+      "FORM_LENGTH": "5",
+      "ALLOWED_TYPES": "[SHORT_ANSWER_RESPONSE, LONG_ANSWER_RESPONSE, MULTIPLE_CHOICE, CHECKBOX]",
+      "SOLUTION_TASK": "a recipe that I can make easily and quickly"
     };
     var body = json.encode(payload);
 
@@ -165,7 +170,7 @@ class _CreateFormState extends State<CreateForm> {
               );
             }).toList(),
           ),
-          if (formValidated())
+          // if (formValidated())
             ElevatedButton(
                 onPressed: () {
                   sendPostRequest();
