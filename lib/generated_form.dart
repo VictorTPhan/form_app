@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
-import 'package:form_app/questions/checkbox_question_widget.dart';
-import 'package:form_app/questions/long_answer_question_widget.dart';
-import 'package:form_app/questions/multiple_choice_question_widget.dart';
-import 'package:form_app/questions/question_widget.dart';
-import 'package:form_app/questions/short_answer_question_widget.dart';
+import 'package:form_app/questions/checkbox_question.dart';
+import 'package:form_app/questions/long_answer_question.dart';
+import 'package:form_app/questions/multiple_choice_question.dart';
+import 'package:form_app/questions/question.dart';
+import 'package:form_app/questions/short_answer_question.dart';
 
 class GeneratedForm {
   late String goal;
@@ -13,7 +13,7 @@ class GeneratedForm {
   late List<dynamic> allowedTypes;
 
   late String name;
-  late List<QuestionWidget> questions;
+  late List<Question> questions;
 
   GeneratedForm({
     required this.name,
@@ -33,29 +33,24 @@ class GeneratedForm {
     questions = []; // must initialize questions first
     List<dynamic> encodedQuestions = json['questions'];
     for (dynamic questionJSON in encodedQuestions) {
-      final GlobalKey<QuestionWidgetState> questionKey = GlobalKey<QuestionWidgetState>();
-
       switch(questionJSON['type']) {
         case "SHORT_ANSWER_RESPONSE":
           questions.add(
-            ShortAnswerQuestionWidget(
-              key: questionKey,
+            ShortAnswerQuestion(
               question: questionJSON['question']
             )
           );
           continue;
         case "LONG_ANSWER_RESPONSE":
           questions.add(
-            LongAnswerQuestionWidget(
-              key: questionKey,
+            LongAnswerQuestion(
               question: questionJSON['question']
             )
           );
           continue;
         case "MULTIPLE_CHOICE":
           questions.add(
-            MultipleChoiceQuestionWidget(
-              key: questionKey,
+            MultipleChoiceQuestion(
               question: questionJSON['question'],
               options: questionJSON['options']
             )
@@ -63,8 +58,7 @@ class GeneratedForm {
           continue;
         case "CHECKBOX":
           questions.add(
-            CheckboxQuestionWidget(
-              key: questionKey,
+            CheckboxQuestion(
               question: questionJSON['question'],
               options: questionJSON['options']
             )

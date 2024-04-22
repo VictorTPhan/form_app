@@ -1,8 +1,14 @@
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fast_forms/flutter_fast_forms.dart';
 import 'package:form_app/generated_form.dart';
-import 'package:form_app/questions/question_widget.dart';
+import 'package:form_app/questions/checkbox_question.dart';
+import 'package:form_app/questions/long_answer_question.dart';
+import 'package:form_app/questions/multiple_choice_question.dart';
+import 'package:form_app/questions/question.dart';
+import 'package:form_app/questions/short_answer_question.dart';
 import 'package:form_app/response.dart';
 import 'package:http/http.dart' as http;
 
@@ -18,30 +24,79 @@ class ViewForm extends StatefulWidget {
 }
 
 class _ViewFormState extends State<ViewForm> {
+  final formKey = GlobalKey<FormState>();
+  bool formValidated = false;
+  String currentFormResponseString = "";
 
-  bool formValidated() {
-    for (QuestionWidget question in widget.generatedForm.questions) {
-      if (question.key.currentState == null) {
-        print("HUH WHY");
-      } else {
-        print("HUH FINE");
-      }
-
-      if (!question.key.currentState!.isFilledIn()) {
+  bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
+    for (String question in responses.keys) {
+      var response = responses[question];
+      if (response is String && response.isEmpty ||
+          response is Set && response.isEmpty) {
         return false;
       }
     }
     return true;
   }
 
-  List<dynamic> getResponses() {
-    List<dynamic> output = [];
-    for (QuestionWidget question in widget.generatedForm.questions) {
-      if (question.key.currentState!.isFilledIn()) {
-        output.add(question.key.currentState!.getChoice());
+  Widget buildQuestion(index) {
+    Question currentQuestion = widget.generatedForm.questions[index];
+
+    Widget inputWidget;
+
+    // Would have used a switch case.
+    if (currentQuestion is ShortAnswerQuestion) {
+      inputWidget = FastTextField(
+        name: currentQuestion.question,
+        minLines: 1,
+        maxLines: 1,
+      );
+    } else if (currentQuestion is LongAnswerQuestion) {
+      inputWidget = FastTextField(
+        name: currentQuestion.question,
+        minLines: 5,
+        maxLines: 10,
+      );
+    } else if (currentQuestion is MultipleChoiceQuestion) {
+      List<FastRadioOption> options = [];
+      for (String option in currentQuestion.options) {
+        options.add(
+            FastRadioOption(
+                title: Text(option),
+                value: option
+            )
+        );
       }
+
+      inputWidget = FastRadioGroup(
+          name: currentQuestion.question,
+          options: options
+      );
+    } else if (currentQuestion is CheckboxQuestion) {
+      List<FastChoiceChip> options = [];
+      for (String option in currentQuestion.options) {
+        options.add(
+            FastChoiceChip(
+              selected: false,
+              value: option,
+            )
+        );
+      }
+
+      inputWidget = FastChoiceChips(
+          name: currentQuestion.question,
+          chips: options
+      );
+    } else {
+      inputWidget = Container();
     }
-    return output;
+
+    return Column(
+      children: [
+        Text(currentQuestion.question),
+        inputWidget
+      ],
+    );
   }
 
   Future<void> sendPostRequest() async {
@@ -51,7 +106,7 @@ class _ViewFormState extends State<ViewForm> {
       "GOAL": widget.generatedForm.goal,
       "PROBLEM": widget.generatedForm.problem,
       "SOLUTION_TASK": widget.generatedForm.solutionTask,
-      "RESPONSES": getResponses().toString()
+      "RESPONSES": currentFormResponseString
     };
     var body = json.encode(payload);
     print(body);
@@ -83,23 +138,30 @@ class _ViewFormState extends State<ViewForm> {
       appBar: AppBar(
         title: Text(widget.generatedForm.name),
       ),
-      body: ListView.builder(
-        itemCount: widget.generatedForm.questions.length + 1,
-        itemBuilder: (BuildContext context, int index) {
-          if (index == widget.generatedForm.questions.length) {
-            if (formValidated()) {
-              return ElevatedButton(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              FastForm(
+                formKey: formKey,
+                children: List.generate(widget.generatedForm.questions.length, (index) => buildQuestion(index)).toList(),
+                onChanged: (UnmodifiableMapView<String, dynamic> responses) {
+                  setState(() {
+                    formValidated = isFormValidated(responses);
+                    currentFormResponseString = responses.toString();
+                  });
+                },
+              ),
+              if (formValidated)
+                ElevatedButton(
                   onPressed: () {
                     sendPostRequest();
                   },
                   child: Text("Let's Go")
-              );
-            }
-          }
-          else {
-            return widget.generatedForm.questions[index];
-          }
-        },
+                )
+            ]
+          ),
+        ),
       )
     );
   }
