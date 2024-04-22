@@ -21,8 +21,13 @@ class _ViewFormState extends State<ViewForm> {
 
   bool formValidated() {
     for (QuestionWidget question in widget.generatedForm.questions) {
-      QuestionWidgetState? widgetState = question.key.currentState;
-      if (widgetState == null || !widgetState.isFilledIn()) {
+      if (question.key.currentState == null) {
+        print("HUH WHY");
+      } else {
+        print("HUH FINE");
+      }
+
+      if (!question.key.currentState!.isFilledIn()) {
         return false;
       }
     }
@@ -78,27 +83,23 @@ class _ViewFormState extends State<ViewForm> {
       appBar: AppBar(
         title: Text(widget.generatedForm.name),
       ),
-      body: Stack(
-        children: [
-          ListView.builder(
-            itemCount: widget.generatedForm.questions.length + 1,
-            itemBuilder: (BuildContext context, int index) {
-              if (index == widget.generatedForm.questions.length) {
-                if (formValidated()) {
-                  return ElevatedButton(
-                    onPressed: () {
-                      sendPostRequest();
-                    },
-                    child: Text("Let's Go")
-                  );
-                }
-              }
-              else {
-                return widget.generatedForm.questions[index];
-              }
-            },
-          ),
-        ]
+      body: ListView.builder(
+        itemCount: widget.generatedForm.questions.length + 1,
+        itemBuilder: (BuildContext context, int index) {
+          if (index == widget.generatedForm.questions.length) {
+            if (formValidated()) {
+              return ElevatedButton(
+                  onPressed: () {
+                    sendPostRequest();
+                  },
+                  child: Text("Let's Go")
+              );
+            }
+          }
+          else {
+            return widget.generatedForm.questions[index];
+          }
+        },
       )
     );
   }
