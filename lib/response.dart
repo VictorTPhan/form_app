@@ -18,7 +18,10 @@ class _ResponsePageState extends State<ResponsePage> {
       ),
       body: ListView(
         children: [
-          Text(widget.response.replaceAll("\\n", "\n").substring(1, widget.response.replaceAll("\\n", "\n").length-2))
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(widget.response.replaceAll("\\n", "\n").substring(1, widget.response.replaceAll("\\n", "\n").length-2)),
+          )
         ],
       ),
     );

@@ -1,6 +1,8 @@
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fast_forms/flutter_fast_forms.dart';
 import 'package:form_app/misc.dart';
 import 'package:form_app/view_form.dart';
 import 'package:http/http.dart' as http;
@@ -15,48 +17,30 @@ class CreateForm extends StatefulWidget {
 }
 
 class _CreateFormState extends State<CreateForm> {
-  TextEditingController goalController = new TextEditingController();
-  TextEditingController problemController = new TextEditingController();
-  TextEditingController formLengthController = new TextEditingController();
-  TextEditingController solutionController = new TextEditingController();
-  Set<String> questionTypes = {};
+  final formKey = GlobalKey<FormState>();
+  bool formValidated = false;
+  UnmodifiableMapView<String, dynamic> currentFormResponse = UnmodifiableMapView({});
 
-  Map<String, bool> checkboxes = {
-    'Short Answer': false,
-    'Long Answer': false,
-    'Multiple Choice': false,
-    'Checkboxes': false,
-  };
-
-  Map<String, String> labelToValue = {
-    'Short Answer': "SHORT_ANSWER_RESPONSE",
-    'Long Answer': "LONG_ANSWER_RESPONSE",
-    'Multiple Choice': "MULTIPLE_CHOICE",
-    'Checkboxes': "CHECKBOX",
-  };
-
-  bool formValidated() {
-    return goalController.text.isNotEmpty
-        && problemController.text.isNotEmpty
-        && formLengthController.text.isNotEmpty
-        && solutionController.text.isNotEmpty
-        && questionTypes.isNotEmpty;
+  bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
+    for (String question in responses.keys) {
+      var response = responses[question];
+      if (response is String && response.isEmpty ||
+          response is Set && response.isEmpty) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> sendPostRequest() async {
     var url = Uri.parse('https://form-app-server-zibv.onrender.com/create_form/');
 
     var payload = {
-      // "GOAL": goalController.text,
-      // "PROBLEM": problemController.text,
-      // "FORM_LENGTH": formLengthController.text,
-      // "ALLOWED_TYPES": questionTypes.toList().toString(),
-      // "SOLUTION_TASK": solutionController.text
-      "GOAL": "To cook some food for a potluck",
-      "PROBLEM": "I am not good at cooking",
-      "FORM_LENGTH": "5",
-      "ALLOWED_TYPES": "[SHORT_ANSWER_RESPONSE, LONG_ANSWER_RESPONSE, MULTIPLE_CHOICE, CHECKBOX]",
-      "SOLUTION_TASK": "a recipe that I can make easily and quickly"
+      "GOAL": currentFormResponse["GOAL"].toString(),
+      "PROBLEM": currentFormResponse["PROBLEM"].toString(),
+      "FORM_LENGTH": currentFormResponse["FORM_LENGTH"].toString(),
+      "ALLOWED_TYPES": currentFormResponse["ALLOWED_TYPES"].toString(),
+      "SOLUTION_TASK": currentFormResponse["SOLUTION_TASK"].toString()
     };
     var body = json.encode(payload);
 
@@ -74,11 +58,11 @@ class _CreateFormState extends State<CreateForm> {
         var jsonResponse = json.decode(response.body);
         var generatedForm = GeneratedForm.fromJson(
           jsonResponse,
-          goalController.text,
-          problemController.text,
-          formLengthController.text,
-          solutionController.text,
-          questionTypes.toList()
+          currentFormResponse["GOAL"].toString(),
+          currentFormResponse["PROBLEM"].toString(),
+          currentFormResponse["FORM_LENGTH"].toString(),
+          currentFormResponse["SOLUTION_TASK"].toString(),
+          currentFormResponse["ALLOWED_TYPES"].toList()
         );
         navigateTo(context, ViewForm(generatedForm: generatedForm));
       } else {
@@ -92,93 +76,85 @@ class _CreateFormState extends State<CreateForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: Text("Create a Form"),
-      ),
-      body: Column(
-        children: [
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'to cook some food...',
-              labelText: 'What do you want to do?',
-              border: OutlineInputBorder(),
+        appBar: AppBar(
+          title: Text("Let's Get Started"),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+                children: [
+                  FastForm(
+                    formKey: formKey,
+                    children: [
+                      const Text("You are trying to..."),
+                      const FastTextField(
+                        name: "GOAL",
+                        minLines: 1,
+                        maxLines: 1,
+                      ),
+                      const Text("What's the problem?"),
+                      const FastTextField(
+                        name: "PROBLEM",
+                        minLines: 1,
+                        maxLines: 1,
+                      ),
+                      const Text("What do you need?"),
+                      const FastTextField(
+                        name: "SOLUTION_TASK",
+                        minLines: 1,
+                        maxLines: 1,
+                      ),
+                      const Text("How many questions do you want to answer?"),
+                      const FastTextField(
+                        name: "FORM_LENGTH",
+                        minLines: 1,
+                        maxLines: 1,
+                      ),
+                      const Text("What kind of questions do you want to answer?"),
+                      FastChoiceChips(
+                          name: "ALLOWED_TYPES",
+                          chips: [
+                            FastChoiceChip(
+                              selected: true,
+                              label: const Text("Short Answer"),
+                              value: "SHORT_ANSWER_RESPONSE",
+                            ),
+                            FastChoiceChip(
+                              selected: true,
+                              label: const Text("Long Answer"),
+                              value: "LONG_ANSWER_RESPONSE",
+                            ),
+                            FastChoiceChip(
+                              selected: true,
+                              label: const Text("Multiple Choice"),
+                              value: "MULTIPLE_CHOICE",
+                            ),
+                            FastChoiceChip(
+                              selected: true,
+                              label: const Text("Checkbox"),
+                              value: "CHECKBOX",
+                            )
+                          ]
+                      )
+                    ],
+                    onChanged: (UnmodifiableMapView<String, dynamic> responses) {
+                      setState(() {
+                        formValidated = isFormValidated(responses);
+                        currentFormResponse = responses;
+                      });
+                    },
+                  ),
+                  if (formValidated)
+                    ElevatedButton(
+                        onPressed: () {
+                          sendPostRequest();
+                        },
+                        child: Text("Let's Go")
+                    )
+                ]
             ),
-            controller: goalController,
-            onChanged: (value) {
-              setState(() {
-
-              });
-            },
           ),
-          TextField(
-            decoration: InputDecoration(
-              hintText: "I can't cook...",
-              labelText: "What's the problem?",
-              border: OutlineInputBorder(),
-            ),
-            controller: problemController,
-            onChanged: (value) {
-              setState(() {
-
-              });
-            },
-          ),
-          TextField(
-            decoration: InputDecoration(
-              hintText: "A game plan, a checklist, advice, an opinion...",
-              labelText: "What do you want to know?",
-              border: OutlineInputBorder(),
-            ),
-            controller: solutionController,
-            onChanged: (value) {
-              setState(() {
-
-              });
-            },
-          ),
-          TextField(
-            decoration: InputDecoration(
-              hintText: "5-7",
-              labelText: "How many questions do you want to answer?",
-              border: OutlineInputBorder(),
-            ),
-            controller: formLengthController,
-            onChanged: (value) {
-              setState(() {
-
-              });
-            },
-          ),
-          Text("What kind of questions do you want to answer?"),
-          ListView(
-            shrinkWrap: true,
-            children: checkboxes.keys.map((String title) {
-              return CheckboxListTile(
-                title: Text(title),
-                value: checkboxes[title],
-                onChanged: (bool? value) {
-                  setState(() {
-                    checkboxes[title] = value!;
-                    for (String questionType in checkboxes.keys) {
-                      if (checkboxes[questionType]!) {
-                        questionTypes.add(labelToValue[questionType]!);
-                      }
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          // if (formValidated())
-            ElevatedButton(
-                onPressed: () {
-                  sendPostRequest();
-                },
-                child: Text("Let's Go")
-            )
-        ],
-      ),
+        )
     );
   }
 }
