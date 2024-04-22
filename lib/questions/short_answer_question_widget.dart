@@ -5,10 +5,10 @@ class ShortAnswerQuestionWidget extends QuestionWidget {
   ShortAnswerQuestionWidget({required super.key, required String question}) : super(question: question);
 
   @override
-  QuestionWidgetState createState() => _ShortAnswerQuestionWidgetState();
+  QuestionWidgetState createState() => ShortAnswerQuestionWidgetState();
 }
 
-class _ShortAnswerQuestionWidgetState extends QuestionWidgetState {
+class ShortAnswerQuestionWidgetState extends QuestionWidgetState {
   TextEditingController controller = TextEditingController();
 
   @override

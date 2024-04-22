@@ -6,10 +6,10 @@ class MultipleChoiceQuestionWidget extends QuestionWithOptionsWidget {
   MultipleChoiceQuestionWidget({required super.key, required String question, required List<dynamic> options}): super(question: question, options: options);
 
   @override
-  QuestionWidgetState createState() => _MultipleChoiceQuestionWidgetState();
+  QuestionWidgetState createState() => MultipleChoiceQuestionWidgetState();
 }
 
-class _MultipleChoiceQuestionWidgetState extends QuestionWithOptionsWidgetState {
+class MultipleChoiceQuestionWidgetState extends QuestionWithOptionsWidgetState {
   String _selectedOption = '';
 
   @override

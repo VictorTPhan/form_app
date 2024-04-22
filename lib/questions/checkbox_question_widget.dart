@@ -6,10 +6,10 @@ class CheckboxQuestionWidget extends QuestionWithOptionsWidget {
   CheckboxQuestionWidget({required super.key, required String question, required List<dynamic> options}): super(question: question, options: options);
 
   @override
-  QuestionWidgetState createState() => _CheckboxQuestionWidgetState();
+  QuestionWidgetState createState() => CheckboxQuestionWidgetState();
 }
 
-class _CheckboxQuestionWidgetState extends QuestionWithOptionsWidgetState {
+class CheckboxQuestionWidgetState extends QuestionWithOptionsWidgetState {
   Set<String> selectedChoices = {};
   Map<String, bool> checkboxes = {};
 
