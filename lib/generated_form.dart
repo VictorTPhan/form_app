@@ -12,11 +12,15 @@ class GeneratedForm {
   late String solutionTask;
   late List<dynamic> allowedTypes;
 
+  late String uuid;
   late String name;
+  late String emoji;
   late List<Question> questions;
 
   GeneratedForm({
+    required this.uuid,
     required this.name,
+    required this.emoji,
     required this.questions,
     required this.goal,
     required this.problem,
@@ -25,46 +29,66 @@ class GeneratedForm {
     required this.allowedTypes
   });
 
-  GeneratedForm.fromJson(Map<String, dynamic> json,
-    this.goal, this.problem, this.formLength,
-    this.solutionTask, this.allowedTypes
-    ) {
-    name = json['form_name'];
+  GeneratedForm.fromJson(Map<String, dynamic> json) {
+    goal = json["GOAL"];
+    problem = json["PROBLEM"];
+    formLength = json["FORM_LENGTH"];
+    solutionTask = json["SOLUTION_TASK"];
+    allowedTypes = json["ALLOWED_TYPES"];
+
+    uuid = json["UUID"];
+    emoji = json["EMOJI"];
+    name = json['FORM_NAME'];
     questions = []; // must initialize questions first
-    List<dynamic> encodedQuestions = json['questions'];
+    List<dynamic> encodedQuestions = json['QUESTIONS'];
+    print(encodedQuestions);
+
     for (dynamic questionJSON in encodedQuestions) {
-      switch(questionJSON['type']) {
+      switch(questionJSON['TYPE']) {
         case "SHORT_ANSWER_RESPONSE":
           questions.add(
             ShortAnswerQuestion(
-              question: questionJSON['question']
+              question: questionJSON['QUESTION']
             )
           );
           continue;
         case "LONG_ANSWER_RESPONSE":
           questions.add(
             LongAnswerQuestion(
-              question: questionJSON['question']
+              question: questionJSON['QUESTION']
             )
           );
           continue;
         case "MULTIPLE_CHOICE":
           questions.add(
             MultipleChoiceQuestion(
-              question: questionJSON['question'],
-              options: questionJSON['options']
+              question: questionJSON['QUESTION'],
+              options: questionJSON['OPTIONS']
             )
           );
           continue;
         case "CHECKBOX":
           questions.add(
             CheckboxQuestion(
-              question: questionJSON['question'],
-              options: questionJSON['options']
+              question: questionJSON['QUESTION'],
+              options: questionJSON['OPTIONS']
             )
           );
           continue;
       }
     }
+  }
+
+  dynamic toJson() {
+    return {
+      "FORM_NAME": name,
+      "EMOJI": emoji,
+      "QUESTIONS": questions.map((question) => question.toJson()).toList(),
+      "GOAL": goal,
+      "PROBLEM": problem,
+      "FORM_LENGTH": formLength,
+      "SOLUTION_TASK": solutionTask,
+      "ALLOWED_TYPES": allowedTypes
+    };
   }
 }

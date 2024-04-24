@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-class Question {
+abstract class Question {
   final String question;
 
   const Question({required this.question});
+
+  dynamic toJson();
 }

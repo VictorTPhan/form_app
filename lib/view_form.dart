@@ -10,8 +10,11 @@ import 'package:form_app/questions/multiple_choice_question.dart';
 import 'package:form_app/questions/question.dart';
 import 'package:form_app/questions/short_answer_question.dart';
 import 'package:form_app/response.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
+import 'generated_response.dart';
 import 'misc.dart';
 
 class ViewForm extends StatefulWidget {
@@ -91,11 +94,18 @@ class _ViewFormState extends State<ViewForm> {
       inputWidget = Container();
     }
 
-    return Column(
-      children: [
-        Text(currentQuestion.question),
-        inputWidget
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            style: standardTextStyle(),
+            currentQuestion.question
+          ),
+          inputWidget
+        ],
+      ),
     );
   }
 
@@ -109,7 +119,6 @@ class _ViewFormState extends State<ViewForm> {
       "RESPONSES": currentFormResponseString
     };
     var body = json.encode(payload);
-    print(body);
 
     try {
       var response = await http.post(
@@ -121,9 +130,25 @@ class _ViewFormState extends State<ViewForm> {
         body: body,
       );
       if (response.statusCode == 200) {
-        print('Response: ${response.body}');
-        // var jsonResponse = json.decode(response.body);
-        navigateTo(context, ResponsePage(response: response.body));
+        var jsonResponse = json.decode(response.body);
+
+        final box = GetStorage();
+
+        // generate a UUID for the response
+        var uuidGenerator = const Uuid();
+        var responseUUID = uuidGenerator.v4();
+
+        // save the response
+        box.write(responseUUID.toString(), jsonResponse);
+
+        // add this response a list referencing this form
+        String address = "${widget.generatedForm.uuid}/responses";
+        List<dynamic> formResponses = box.read(address) ?? [];
+        formResponses.add(responseUUID.toString());
+        box.write(address, formResponses);
+
+        // view the response
+        navigateTo(context, ResponsePage(responseUUID: responseUUID));
       } else {
         print('Request failed with status: ${response.statusCode}');
       }
@@ -136,7 +161,11 @@ class _ViewFormState extends State<ViewForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.generatedForm.name),
+        toolbarHeight: 80,
+        title: Text(
+            style: standardTextStyle(fontSize: 25),
+            widget.generatedForm.name
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
