@@ -1,6 +1,8 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fast_forms/flutter_fast_forms.dart';
 import 'package:form_app/misc.dart';
@@ -19,13 +21,76 @@ class CreateForm extends StatefulWidget {
 }
 
 class _CreateFormState extends State<CreateForm> {
+  final List<Map<String, String>> examples = [
+    {
+      "goal": "cook some food for a potluck",
+      "problem": "I'm really bad at cooking",
+      "task": "a recipe I can easily make"
+    },
+    {
+      "goal": "plan a summer vacation",
+      "problem": "I'm not sure what to do or where to go",
+      "task": "a travel itinerary"
+    },
+    {
+      "goal": "find an interesting book to read",
+      "problem": "I don't know what to choose",
+      "task": "a suggestion on a good read"
+    },
+    {
+      "goal": "study for an upcoming final",
+      "problem": "I can't concentrate",
+      "task": "a solid study plan based around my schedule"
+    },
+    {
+      "goal": "understand something from my calculus class",
+      "problem": "My professor's notes are bad and I don't get it",
+      "task": "a simple explanation on a particular calculus concept"
+    },
+    {
+      "goal": "write a letter to my boss",
+      "problem": "I'm not sure how I should word it",
+      "task": "A professional email template that I could use"
+    },
+    {
+      "goal": "write an email to an angry client",
+      "problem": "I'm not good at customer service",
+      "task": "A professional email template that I could use"
+    },
+    {
+      "goal": "write a scholarship application",
+      "problem": "I'm bad at writing application essays",
+      "task": "Things I could write about/an essay about my strengths"
+    },
+    {
+      "goal": "practice interviewing for a job",
+      "problem": "The interviews are really hard",
+      "task": "A practice regiment for me to prepare for an interview"
+    },
+    {
+      "goal": "find a job with my major",
+      "problem": "It's super hard finding a job right now",
+      "task": "Potential places to look for a job"
+    },
+  ];
+
   final formKey = GlobalKey<FormState>();
   bool formValidated = false;
   UnmodifiableMapView<String, dynamic> currentFormResponse = UnmodifiableMapView({});
+  late Map<String, String> example = examples[Random().nextInt(examples.length)];
 
   bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
     for (String question in responses.keys) {
       var response = responses[question];
+      
+      // special case -- "FORM_LENGTH" != 0
+      if (question == "FORM_LENGTH") {
+        dynamic parseResult = int.tryParse(response);
+        if (parseResult == null || parseResult <= 0) {
+          return false;
+        }
+      }
+
       if (response is String && response.isEmpty ||
           response is Set && response.isEmpty) {
         return false;
@@ -108,52 +173,84 @@ class _CreateFormState extends State<CreateForm> {
                   FastForm(
                     formKey: formKey,
                     children: [
-                      const Text("You are trying to..."),
-                      const FastTextField(
+                      Text(
+                        style: standardTextStyle(),
+                        "You are trying to..."
+                      ),
+                      FastTextField(
                         name: "GOAL",
+                        placeholder: example["goal"],
                         minLines: 1,
                         maxLines: 1,
                       ),
-                      const Text("What's the problem?"),
-                      const FastTextField(
+                      Text(
+                        style: standardTextStyle(),
+                        "What's the problem?"
+                      ),
+                      FastTextField(
                         name: "PROBLEM",
+                        placeholder: example["problem"],
                         minLines: 1,
                         maxLines: 1,
                       ),
-                      const Text("What do you need?"),
-                      const FastTextField(
+                      Text(
+                        style: standardTextStyle(),
+                        "What do you need?"
+                      ),
+                      FastTextField(
                         name: "SOLUTION_TASK",
+                        placeholder: example["task"],
                         minLines: 1,
                         maxLines: 1,
                       ),
-                      const Text("How many questions do you want to answer?"),
+                      Text(
+                        style: standardTextStyle(),
+                        "How many questions do you want to answer?"
+                      ),
                       const FastTextField(
                         name: "FORM_LENGTH",
+                        placeholder: "5",
+                        keyboardType: TextInputType.number,
                         minLines: 1,
                         maxLines: 1,
                       ),
-                      const Text("What kind of questions do you want to answer?"),
+                      Text(
+                        style: standardTextStyle(),
+                        "What kind of questions do you want to answer?"
+                      ),
                       FastChoiceChips(
                           name: "ALLOWED_TYPES",
                           chips: [
                             FastChoiceChip(
                               selected: true,
-                              label: const Text("Short Answer"),
+                              label: Text(
+                                style: standardTextStyle(),
+                                "Short Answer"
+                              ),
                               value: "SHORT_ANSWER_RESPONSE",
                             ),
                             FastChoiceChip(
                               selected: true,
-                              label: const Text("Long Answer"),
+                              label: Text(
+                                style: standardTextStyle(),
+                                "Long Answer"
+                              ),
                               value: "LONG_ANSWER_RESPONSE",
                             ),
                             FastChoiceChip(
                               selected: true,
-                              label: const Text("Multiple Choice"),
+                              label: Text(
+                                style: standardTextStyle(),
+                                "Multiple Choice"
+                              ),
                               value: "MULTIPLE_CHOICE",
                             ),
                             FastChoiceChip(
                               selected: true,
-                              label: const Text("Checkbox"),
+                              label: Text(
+                                style: standardTextStyle(),
+                                "Checkbox"
+                              ),
                               value: "CHECKBOX",
                             )
                           ]
@@ -171,7 +268,10 @@ class _CreateFormState extends State<CreateForm> {
                         onPressed: () {
                           sendPostRequest();
                         },
-                        child: Text("Let's Go")
+                        child: Text(
+                          style: standardTextStyle(),
+                          "Let's Go"
+                        )
                     )
                 ]
             ),
