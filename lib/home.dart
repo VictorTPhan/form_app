@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:animate_do/animate_do.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:collapsible/collapsible.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:fluid_dialog/fluid_dialog.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:form_app/create_form.dart';
@@ -77,25 +81,219 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 80,
-        title: Text(
-          style: standardTextStyle(fontSize: 25),
-          "Welcome Back!"
+  Widget displayResponseBar(List<String> responseUUIDs) {
+    return ListView.builder(
+        shrinkWrap: true,
+        itemCount: responseUUIDs.length,
+        itemBuilder: (BuildContext context, int rIndex) {
+          final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
+
+          return GestureDetector(
+            onTap: () {
+              navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
+            },
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: AnimatedTextKit(
+                  isRepeatingAnimation: false,
+                  animatedTexts: [
+                    TypewriterAnimatedText(
+                        speed: const Duration(milliseconds: 50),
+                        textStyle: standardTextStyle(),
+                        "${response.emoji}  ${response.name}"
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+    );
+  }
+
+  Widget displayResponseList(Map<String, dynamic> formJson, List<String> responseUUIDs) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.90,
+          child: Collapsible(
+            collapsed: !responseListViewStatuses[formJson]!,
+            fade: true,
+            curve: Curves.easeInOut,
+            axis: CollapsibleAxis.vertical,
+            child: FadeInDown(
+                from: 10,
+                duration: const Duration(milliseconds: 200),
+                child: displayResponseBar(responseUUIDs)
+            ),
+          ),
         ),
       ),
-      body: EasyRefresh(
-        onRefresh: fetchSavedDataSetState,
-        child: ListView.builder(
+    );
+  }
+
+  void deleteForm(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
+    // remove this form
+    box.remove(generatedForm.uuid);
+
+    // remove this form from saved_forms
+    List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
+    savedForms.remove(generatedForm.uuid);
+    box.write("SAVED_FORMS", savedForms);
+
+    // remove all responses related to this form
+    for (String responseUUID in responseUUIDs) {
+      box.remove(responseUUID);
+    }
+
+    // remove the list of responses
+    box.remove("${generatedForm.uuid}/responses");
+
+    fetchSavedDataSetState();
+  }
+
+  void displayFormDeletionDialog(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
+    showDialog(
+      context: context,
+      builder: (context) => FluidDialog(
+        // Set the first page of the dialog.
+        rootPage: FluidDialogPage(
+          alignment: Alignment.center, //Aligns the dialog to the bottom left.
+          builder: (context) => Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FadeIn(
+                    child: Text(
+                        style: standardTextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        "Form Deletion"
+                    ),
+                  ),
+                  FadeIn(
+                    child: Text(
+                        textAlign: TextAlign.center,
+                        style: standardTextStyle(),
+                        "Do you want to delete ${generatedForm.emoji} ${generatedForm.name}? This will also delete all associated with it."
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {
+                            deleteForm(formJson, generatedForm, responseUUIDs);
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green
+                          ),
+                          child: Text(
+                            style: standardTextStyle(
+                              color: Colors.white
+                            ),
+                            "Go ahead"
+                          )
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent
+                          ),
+                          child: Text(
+                              style: standardTextStyle(
+                                  color: Colors.white
+                              ),
+                              "Nevermind"
+                          )
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ), // This can be any widget.
+        ),
+      ),
+    );
+  }
+
+  Widget displayFormBar(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
+    return GestureDetector(
+      onTap: () {
+        navigateTo(context, ViewForm(generatedForm: generatedForm));
+      },
+      onLongPress: () {
+        displayFormDeletionDialog(formJson, generatedForm, responseUUIDs);
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: gradients[generatedForm.colorIndex],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                      style: standardTextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ).copyWith(
+                          overflow: TextOverflow.ellipsis
+                      ),
+                      "${generatedForm.emoji}  ${generatedForm.name}"
+                  ),
+                ),
+                if (responseUUIDs.isNotEmpty)
+                  IconButton(
+                      color: Colors.white,
+                      onPressed: () {
+                        setState(() {
+                          responseListViewStatuses[formJson] = !responseListViewStatuses[formJson]!;
+                        });
+                      },
+                      icon: !responseListViewStatuses[formJson]!?
+                      const Icon(Icons.expand_more) :
+                      const Icon(Icons.expand_less)
+                  )
+                else
+                  SizedBox.fromSize(size: const Size(50, 50))
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget getMainBody() {
+    if (displayForms.isNotEmpty) {
+      return ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(8),
           itemCount: displayForms.keys.length,
           itemBuilder: (BuildContext context, int fIndex) {
             Map<String, dynamic> formJson = displayForms.keys.elementAt(fIndex);
-            var generatedForm = GeneratedForm.fromJson(formJson);
+            GeneratedForm generatedForm = GeneratedForm.fromJson(formJson);
             List<String> responseUUIDs = displayForms[formJson]!;
 
             delay += delayIncrease;
@@ -104,116 +302,53 @@ class _HomePageState extends State<HomePage> {
               delay: Duration(milliseconds: delay),
               child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      navigateTo(context, ViewForm(generatedForm: generatedForm));
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          gradient: LinearGradient(
-                            begin: Alignment.topRight,
-                            end: Alignment.bottomLeft,
-                            colors: gradients[generatedForm.colorIndex],
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  style: standardTextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                  ).copyWith(
-                                    overflow: TextOverflow.ellipsis
-                                  ),
-                                  "${generatedForm.emoji}  ${generatedForm.name}"
-                                ),
-                              ),
-                              if (responseUUIDs.isNotEmpty)
-                                IconButton(
-                                  color: Colors.white,
-                                  onPressed: () {
-                                    setState(() {
-                                      responseListViewStatuses[formJson] = !responseListViewStatuses[formJson]!;
-                                    });
-                                  },
-                                  icon: !responseListViewStatuses[formJson]!?
-                                    const Icon(Icons.expand_more) :
-                                    const Icon(Icons.expand_less)
-                                )
-                              else
-                                SizedBox.fromSize(size: const Size(50, 50))
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.90,
-                        child: Collapsible(
-                          collapsed: !responseListViewStatuses[formJson]!,
-                          fade: true,
-                          curve: Curves.easeInOut,
-                          axis: CollapsibleAxis.vertical,
-                          child: FadeInDown(
-                            from: 10,
-                            duration: Duration(milliseconds: 200),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: responseUUIDs.length,
-                              itemBuilder: (BuildContext context, int rIndex) {
-                                final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
-
-                                return GestureDetector(
-                                  onTap: () {
-                                    navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
-                                  },
-                                  child: Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: AnimatedTextKit(
-                                        isRepeatingAnimation: false,
-                                        animatedTexts: [
-                                          TypewriterAnimatedText(
-                                            speed: const Duration(milliseconds: 50),
-                                            textStyle: standardTextStyle(),
-                                            "${response.emoji}  ${response.name}"
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  displayFormBar(formJson, generatedForm, responseUUIDs),
+                  displayResponseList(formJson, responseUUIDs)
                 ],
               ),
             );
           }
+      );
+    } else {
+      return ListView(
+        children: [
+          FadeIn(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                style: standardTextStyle(),
+                "You don't have any forms made right now. Try making one below."
+              ),
+            ),
+          )
+        ],
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 80,
+        title: FadeInDown(
+          child: Text(
+            style: standardTextStyle(fontSize: 25),
+            "Welcome Back!"
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {
-          navigateTo(context, CreateForm());
-        },
+      body: EasyRefresh(
+        onRefresh: fetchSavedDataSetState,
+        child: getMainBody()
+      ),
+      floatingActionButton: FadeInUp(
+        child: FloatingActionButton(
+          child: const Icon(Icons.add),
+          onPressed: () {
+            navigateTo(context, CreateForm());
+          },
+        ),
       ),
     );
   }
