@@ -20,6 +20,8 @@ dependencies:
   flutter_markdown: ^0.7.1
   google_fonts: ^6.2.1
   easy_refresh: ^3.3.5
+  animate_do: ^3.3.4
+  animated_text_kit: ^4.2.2
 
 dev_dependencies:
   flutter_test:

@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:form_app/generated_response.dart';
@@ -41,8 +42,11 @@ class _ResponsePageState extends State<ResponsePage> {
             response.name
         ),
       ),
-      body: Markdown(
-        data: response.body,
+      body: FadeInDown(
+        delay: const Duration(milliseconds: 150),
+        child: Markdown(
+          data: response.body,
+        ),
       ),
     );
   }

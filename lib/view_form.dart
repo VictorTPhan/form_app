@@ -1,6 +1,8 @@
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:animate_do/animate_do.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fast_forms/flutter_fast_forms.dart';
 import 'package:form_app/generated_form.dart';
@@ -13,8 +15,6 @@ import 'package:form_app/response.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
-
-import 'generated_response.dart';
 import 'misc.dart';
 
 class ViewForm extends StatefulWidget {
@@ -30,6 +30,8 @@ class _ViewFormState extends State<ViewForm> {
   final formKey = GlobalKey<FormState>();
   bool formValidated = false;
   String currentFormResponseString = "";
+  int delayIncrease = 200;
+  late int delay = -delayIncrease;
 
   bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
     for (String question in responses.keys) {
@@ -40,6 +42,37 @@ class _ViewFormState extends State<ViewForm> {
       }
     }
     return true;
+  }
+
+  Widget createWidgetWithDelay(Widget child) {
+    delay += delayIncrease;
+
+    return FadeInLeft(
+      delay: Duration(milliseconds: delay),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: child,
+      ),
+    );
+  }
+
+  Widget createFormQuestion(String question, Widget formWidget) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedTextKit(
+          isRepeatingAnimation: false,
+          animatedTexts: [
+            TypewriterAnimatedText(
+                speed: const Duration(milliseconds: 50),
+                textStyle: standardTextStyle(),
+                question
+            ),
+          ],
+        ),
+        formWidget
+      ],
+    );
   }
 
   Widget buildQuestion(index) {
@@ -65,8 +98,11 @@ class _ViewFormState extends State<ViewForm> {
       for (String option in currentQuestion.options) {
         options.add(
             FastRadioOption(
-                title: Text(option),
-                value: option
+              title: Text(
+                style: standardTextStyle(),
+                option
+              ),
+              value: option
             )
         );
       }
@@ -94,18 +130,13 @@ class _ViewFormState extends State<ViewForm> {
       inputWidget = Container();
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            style: standardTextStyle(),
-            currentQuestion.question
-          ),
-          inputWidget
-        ],
-      ),
+    delay += delayIncrease;
+
+    return createWidgetWithDelay(
+      createFormQuestion(
+        currentQuestion.question,
+        inputWidget
+      )
     );
   }
 
@@ -182,11 +213,14 @@ class _ViewFormState extends State<ViewForm> {
                 },
               ),
               if (formValidated)
-                ElevatedButton(
-                  onPressed: () {
-                    sendPostRequest();
-                  },
-                  child: Text("Let's Go")
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      sendPostRequest();
+                    },
+                    child: Text("Let's Go")
+                  ),
                 )
             ]
           ),

@@ -2,7 +2,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fast_forms/flutter_fast_forms.dart';
 import 'package:form_app/misc.dart';
@@ -78,6 +79,39 @@ class _CreateFormState extends State<CreateForm> {
   bool formValidated = false;
   UnmodifiableMapView<String, dynamic> currentFormResponse = UnmodifiableMapView({});
   late Map<String, String> example = examples[Random().nextInt(examples.length)];
+  int delayIncrease = 200;
+  late int delay = -delayIncrease;
+
+  Widget createWidgetWithDelay(Widget child) {
+    delay += delayIncrease;
+
+    return FadeInLeft(
+      delay: Duration(milliseconds: delay),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: child,
+      ),
+    );
+  }
+
+  Widget createFormQuestion(String question, Widget formWidget) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedTextKit(
+          isRepeatingAnimation: false,
+          animatedTexts: [
+            TypewriterAnimatedText(
+              speed: const Duration(milliseconds: 50),
+              textStyle: standardTextStyle(),
+              question
+            ),
+          ],
+        ),
+        formWidget
+      ],
+    );
+  }
 
   bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
     for (String question in responses.keys) {
@@ -173,88 +207,93 @@ class _CreateFormState extends State<CreateForm> {
                   FastForm(
                     formKey: formKey,
                     children: [
-                      Text(
-                        style: standardTextStyle(),
-                        "You are trying to..."
+                      createWidgetWithDelay(
+                        createFormQuestion(
+                          "You are trying to...",
+                          FastTextField(
+                            name: "GOAL",
+                            placeholder: example["goal"],
+                            minLines: 1,
+                            maxLines: 1,
+                          ),
+                        )
                       ),
-                      FastTextField(
-                        name: "GOAL",
-                        placeholder: example["goal"],
-                        minLines: 1,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        style: standardTextStyle(),
-                        "What's the problem?"
-                      ),
-                      FastTextField(
-                        name: "PROBLEM",
-                        placeholder: example["problem"],
-                        minLines: 1,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        style: standardTextStyle(),
-                        "What do you need?"
-                      ),
-                      FastTextField(
-                        name: "SOLUTION_TASK",
-                        placeholder: example["task"],
-                        minLines: 1,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        style: standardTextStyle(),
-                        "How many questions do you want to answer?"
-                      ),
-                      const FastTextField(
-                        name: "FORM_LENGTH",
-                        placeholder: "5",
-                        keyboardType: TextInputType.number,
-                        minLines: 1,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        style: standardTextStyle(),
-                        "What kind of questions do you want to answer?"
-                      ),
-                      FastChoiceChips(
-                          name: "ALLOWED_TYPES",
-                          chips: [
-                            FastChoiceChip(
-                              selected: true,
-                              label: Text(
-                                style: standardTextStyle(),
-                                "Short Answer"
-                              ),
-                              value: "SHORT_ANSWER_RESPONSE",
+                      createWidgetWithDelay(
+                          createFormQuestion(
+                            "What's the problem?",
+                            FastTextField(
+                              name: "PROBLEM",
+                              placeholder: example["problem"],
+                              minLines: 1,
+                              maxLines: 1,
                             ),
-                            FastChoiceChip(
-                              selected: true,
-                              label: Text(
-                                style: standardTextStyle(),
-                                "Long Answer"
-                              ),
-                              value: "LONG_ANSWER_RESPONSE",
+                          )
+                      ),
+                      createWidgetWithDelay(
+                          createFormQuestion(
+                            "What do you need?",
+                            FastTextField(
+                              name: "SOLUTION_TASK",
+                              placeholder: example["task"],
+                              minLines: 1,
+                              maxLines: 1,
                             ),
-                            FastChoiceChip(
-                              selected: true,
-                              label: Text(
-                                style: standardTextStyle(),
-                                "Multiple Choice"
-                              ),
-                              value: "MULTIPLE_CHOICE",
+                          )
+                      ),
+                      createWidgetWithDelay(
+                          createFormQuestion(
+                            "How many questions do you want to answer?",
+                            const FastTextField(
+                              name: "FORM_LENGTH",
+                              placeholder: "5",
+                              keyboardType: TextInputType.number,
+                              minLines: 1,
+                              maxLines: 1,
                             ),
-                            FastChoiceChip(
-                              selected: true,
-                              label: Text(
-                                style: standardTextStyle(),
-                                "Checkbox"
-                              ),
-                              value: "CHECKBOX",
-                            )
-                          ]
-                      )
+                          )
+                      ),
+                      createWidgetWithDelay(
+                          createFormQuestion(
+                            "What kind of questions do you want to answer?",
+                              FastChoiceChips(
+                                  name: "ALLOWED_TYPES",
+                                  chips: [
+                                    FastChoiceChip(
+                                      selected: true,
+                                      label: Text(
+                                          style: standardTextStyle(),
+                                          "Short Answer"
+                                      ),
+                                      value: "SHORT_ANSWER_RESPONSE",
+                                    ),
+                                    FastChoiceChip(
+                                      selected: true,
+                                      label: Text(
+                                          style: standardTextStyle(),
+                                          "Long Answer"
+                                      ),
+                                      value: "LONG_ANSWER_RESPONSE",
+                                    ),
+                                    FastChoiceChip(
+                                      selected: true,
+                                      label: Text(
+                                          style: standardTextStyle(),
+                                          "Multiple Choice"
+                                      ),
+                                      value: "MULTIPLE_CHOICE",
+                                    ),
+                                    FastChoiceChip(
+                                      selected: true,
+                                      label: Text(
+                                          style: standardTextStyle(),
+                                          "Checkbox"
+                                      ),
+                                      value: "CHECKBOX",
+                                    )
+                                  ]
+                              )
+                          )
+                      ),
                     ],
                     onChanged: (UnmodifiableMapView<String, dynamic> responses) {
                       setState(() {

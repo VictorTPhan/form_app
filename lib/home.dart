@@ -1,7 +1,10 @@
+import 'package:animate_do/animate_do.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:collapsible/collapsible.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:form_app/create_form.dart';
 import 'package:form_app/misc.dart';
 import 'package:form_app/response.dart';
@@ -27,6 +30,8 @@ class _HomePageState extends State<HomePage> {
   Map<Map<String, dynamic>, bool> responseListViewStatuses = {};
 
   late final box;
+  int delayIncrease = 200;
+  late int delay = -delayIncrease;
 
   @override
   initState() {
@@ -40,7 +45,7 @@ class _HomePageState extends State<HomePage> {
 
     // add a reference to this entry in a list
     List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
-    print("SAVED FORMS " + savedForms.toString());
+    // print("SAVED FORMS " + savedForms.toString());
 
     List<String> unreachableUUIDs = [];
     for (String formUUID in savedForms) {
@@ -63,7 +68,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
     }
-    print("UNREACHABLE UUIDS: " + unreachableUUIDs.toString());
+    // print("UNREACHABLE UUIDS: " + unreachableUUIDs.toString());
   }
 
   Future<void> fetchSavedDataSetState() async {
@@ -79,7 +84,7 @@ class _HomePageState extends State<HomePage> {
         toolbarHeight: 80,
         title: Text(
           style: standardTextStyle(fontSize: 25),
-          "Welcome Back"
+          "Welcome Back!"
         ),
       ),
       body: EasyRefresh(
@@ -93,68 +98,120 @@ class _HomePageState extends State<HomePage> {
             var generatedForm = GeneratedForm.fromJson(formJson);
             List<String> responseUUIDs = displayForms[formJson]!;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    navigateTo(context, ViewForm(generatedForm: generatedForm));
-                  },
-                  child: Card(
+            delay += delayIncrease;
+
+            return FadeInLeft(
+              delay: Duration(milliseconds: delay),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      navigateTo(context, ViewForm(generatedForm: generatedForm));
+                    },
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            style: standardTextStyle(),
-                            "${generatedForm.emoji}  ${generatedForm.name}"
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                          gradient: LinearGradient(
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
+                            colors: [
+                              Colors.blue,
+                              Colors.red,
+                            ],
                           ),
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                responseListViewStatuses[formJson] = !responseListViewStatuses[formJson]!;
-                              });
-                            },
-                            icon: !responseListViewStatuses[formJson]!?
-                              const Icon(Icons.expand_more) :
-                              const Icon(Icons.expand_less)
-                          )
-                        ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black38,
+                              blurRadius: 3,
+                              offset: Offset(0, 3), // Shadow position
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  style: standardTextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                  ).copyWith(
+                                    overflow: TextOverflow.ellipsis
+                                  ),
+                                  "${generatedForm.emoji}  ${generatedForm.name}"
+                                ),
+                              ),
+                              if (responseUUIDs.isNotEmpty)
+                                IconButton(
+                                  color: Colors.white,
+                                  onPressed: () {
+                                    setState(() {
+                                      responseListViewStatuses[formJson] = !responseListViewStatuses[formJson]!;
+                                    });
+                                  },
+                                  icon: !responseListViewStatuses[formJson]!?
+                                    const Icon(Icons.expand_more) :
+                                    const Icon(Icons.expand_less)
+                                )
+                              else
+                                SizedBox.fromSize(size: const Size(50, 50))
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Collapsible(
-                  collapsed: !responseListViewStatuses[formJson]!,
-                  fade: true,
-                  curve: Curves.easeInOut,
-                  axis: CollapsibleAxis.vertical,
-                  child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.all(8),
-                      itemCount: responseUUIDs.length,
-                      itemBuilder: (BuildContext context, int rIndex) {
-                        final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.90,
+                      child: Collapsible(
+                        collapsed: !responseListViewStatuses[formJson]!,
+                        fade: true,
+                        curve: Curves.easeInOut,
+                        axis: CollapsibleAxis.vertical,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: responseUUIDs.length,
+                          itemBuilder: (BuildContext context, int rIndex) {
+                            final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
 
-                        return GestureDetector(
-                          onTap: () {
-                            navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
-                          },
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                style: standardTextStyle(),
-                                "${response.emoji}  ${response.name}"
+                            return FadeInDown(
+                              from: 10 + (responseUUIDs.length - 1 - rIndex) * 25,
+                              duration: Duration(milliseconds: 200),
+                              child: GestureDetector(
+                                onTap: () {
+                                  navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
+                                },
+                                child: Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: AnimatedTextKit(
+                                      isRepeatingAnimation: false,
+                                      animatedTexts: [
+                                        TypewriterAnimatedText(
+                                          speed: const Duration(milliseconds: 50),
+                                          textStyle: standardTextStyle(),
+                                          "${response.emoji}  ${response.name}"
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      }
+                            );
+                          }
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           }
         ),
