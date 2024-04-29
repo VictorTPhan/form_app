@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:form_app/questions/checkbox_question.dart';
 import 'package:form_app/questions/long_answer_question.dart';
@@ -5,12 +7,15 @@ import 'package:form_app/questions/multiple_choice_question.dart';
 import 'package:form_app/questions/question.dart';
 import 'package:form_app/questions/short_answer_question.dart';
 
+import 'misc.dart';
+
 class GeneratedForm {
   late String goal;
   late String problem;
   late String formLength;
   late String solutionTask;
   late List<dynamic> allowedTypes;
+  late int colorIndex;
 
   late String uuid;
   late String name;
@@ -35,6 +40,7 @@ class GeneratedForm {
     formLength = json["FORM_LENGTH"];
     solutionTask = json["SOLUTION_TASK"];
     allowedTypes = json["ALLOWED_TYPES"];
+    colorIndex = json["COLOR_INDEX"];
 
     uuid = json["UUID"];
     emoji = json["EMOJI"];
@@ -88,7 +94,8 @@ class GeneratedForm {
       "PROBLEM": problem,
       "FORM_LENGTH": formLength,
       "SOLUTION_TASK": solutionTask,
-      "ALLOWED_TYPES": allowedTypes
+      "ALLOWED_TYPES": allowedTypes,
+      "COLOR_INDEX": colorIndex,
     };
   }
 }

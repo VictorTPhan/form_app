@@ -164,6 +164,7 @@ class _CreateFormState extends State<CreateForm> {
         jsonResponse["FORM_LENGTH"] = currentFormResponse["FORM_LENGTH"].toString();
         jsonResponse["SOLUTION_TASK"] = currentFormResponse["SOLUTION_TASK"].toString();
         jsonResponse["ALLOWED_TYPES"] = currentFormResponse["ALLOWED_TYPES"].toList();
+        jsonResponse["COLOR_INDEX"] = Random().nextInt(gradients.length);
 
         // create a UUID to reference this by
         var uuidGenerator = const Uuid();

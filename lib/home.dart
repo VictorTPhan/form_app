@@ -111,23 +111,13 @@ class _HomePageState extends State<HomePage> {
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
                           gradient: LinearGradient(
                             begin: Alignment.topRight,
                             end: Alignment.bottomLeft,
-                            colors: [
-                              Colors.blue,
-                              Colors.red,
-                            ],
+                            colors: gradients[generatedForm.colorIndex],
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black38,
-                              blurRadius: 3,
-                              offset: Offset(0, 3), // Shadow position
-                            ),
-                          ],
                         ),
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8.0, right: 8.0),
@@ -166,46 +156,49 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.90,
-                      child: Collapsible(
-                        collapsed: !responseListViewStatuses[formJson]!,
-                        fade: true,
-                        curve: Curves.easeInOut,
-                        axis: CollapsibleAxis.vertical,
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: responseUUIDs.length,
-                          itemBuilder: (BuildContext context, int rIndex) {
-                            final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.90,
+                        child: Collapsible(
+                          collapsed: !responseListViewStatuses[formJson]!,
+                          fade: true,
+                          curve: Curves.easeInOut,
+                          axis: CollapsibleAxis.vertical,
+                          child: FadeInDown(
+                            from: 10,
+                            duration: Duration(milliseconds: 200),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: responseUUIDs.length,
+                              itemBuilder: (BuildContext context, int rIndex) {
+                                final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
 
-                            return FadeInDown(
-                              from: 10 + (responseUUIDs.length - 1 - rIndex) * 25,
-                              duration: Duration(milliseconds: 200),
-                              child: GestureDetector(
-                                onTap: () {
-                                  navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
-                                },
-                                child: Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: AnimatedTextKit(
-                                      isRepeatingAnimation: false,
-                                      animatedTexts: [
-                                        TypewriterAnimatedText(
-                                          speed: const Duration(milliseconds: 50),
-                                          textStyle: standardTextStyle(),
-                                          "${response.emoji}  ${response.name}"
-                                        ),
-                                      ],
+                                return GestureDetector(
+                                  onTap: () {
+                                    navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
+                                  },
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: AnimatedTextKit(
+                                        isRepeatingAnimation: false,
+                                        animatedTexts: [
+                                          TypewriterAnimatedText(
+                                            speed: const Duration(milliseconds: 50),
+                                            textStyle: standardTextStyle(),
+                                            "${response.emoji}  ${response.name}"
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            );
-                          }
+                                );
+                              }
+                            ),
+                          ),
                         ),
                       ),
                     ),
