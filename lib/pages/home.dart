@@ -1,22 +1,16 @@
-import 'dart:io';
-
 import 'package:animate_do/animate_do.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:collapsible/collapsible.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:fluid_dialog/fluid_dialog.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:form_app/create_form.dart';
+import 'package:form_app/pages/create_form.dart';
 import 'package:form_app/misc.dart';
-import 'package:form_app/response.dart';
-import 'package:form_app/view_form.dart';
+import 'package:form_app/pages/response.dart';
+import 'package:form_app/pages/view_form.dart';
 import 'package:get_storage/get_storage.dart';
-
-import 'generated_form.dart';
-import 'generated_response.dart';
+import '../forms/generated_form.dart';
+import '../forms/generated_response.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,16 +20,32 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Map of JSON -> List<String>
-  // Form JSON -> Response UUIDs
+
+  /// A [Map] representing a:
+  ///
+  /// Map of JSON -> List<String>
+  ///
+  /// which can be alternatively thought of as:
+  ///
+  /// Form JSON -> Response UUIDs
   Map<Map<String, dynamic>, List<String>> displayForms = {};
 
-  // Used to keep track of which form response ListViews are being shown
+  /// A [Map] used to keep track of which form response [ListView]s are being shown
   Map<Map<String, dynamic>, bool> responseListViewStatuses = {};
 
-  late final box;
+  /// A reference to the [GetStorage] filesystem.
+  late final GetStorage box;
+
+  /// The amount of extra time it takes for a question on this page to load,
+  /// in milliseconds.
   int delayIncrease = 200;
+
+  /// The amount of time it takes for a question on this page to load, in
+  /// milliseconds. Every newly loaded question widget increases this value.
   late int delay = -delayIncrease;
+
+
+
 
   @override
   initState() {
@@ -43,76 +53,87 @@ class _HomePageState extends State<HomePage> {
     fetchSavedData();
   }
 
+  /// Reads from the [BoxStorage] file system and loads all of the read data into
+  /// [displayForms] and [responseListViewStatuses].
   void fetchSavedData() {
+    // Clear out any currently displayed data.
     displayForms.clear();
     responseListViewStatuses.clear();
 
-    // add a reference to this entry in a list
+    // Read from the SAVED_FORMS list, which contains the UUIDs of all saved forms.
     List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
-    // print("SAVED FORMS " + savedForms.toString());
 
+    // Create a list of unreachable UUIDs that may or may not be populated afterwards.
     List<String> unreachableUUIDs = [];
+
     for (String formUUID in savedForms) {
+      // Attempt to read from the box.
       var searchResult = box.read(formUUID);
+
+      // If nothing comes up, this UUID is a dud and we can throw it away.
       if (searchResult == null) {
         unreachableUUIDs.add(formUUID);
         continue;
       } else {
+        // Create a list of response UUID strings related to this form.
         displayForms[searchResult] = [];
+
+        // Mark this form's response ListView as collapsed.
         responseListViewStatuses[searchResult] = false;
 
+        // Attempt to read from the list of response UUIDs. If nothing
+        // comes up, this is an empty list.
         List<dynamic> responses = box.read("$formUUID/responses") ?? [];
         for (String responseUUID in responses) {
+          // Attempt to read this response UUID.
           var responseExists = box.read(responseUUID);
+
+          // This is a valid response UUID and we can display it.
           if (responseExists != null){
             displayForms[searchResult]!.add(responseUUID);
           } else {
+            // If nothing comes up, this UUID is a dud and we can throw it away.
             unreachableUUIDs.add(responseUUID);
           }
         }
       }
     }
-    // print("UNREACHABLE UUIDS: " + unreachableUUIDs.toString());
   }
 
+  /// Refreshes the feed with updated data from the [GetStorage] box.
   Future<void> fetchSavedDataSetState() async {
     setState(() {
       fetchSavedData();
     });
   }
 
-  Widget displayResponseBar(List<String> responseUUIDs) {
-    return ListView.builder(
-        shrinkWrap: true,
-        itemCount: responseUUIDs.length,
-        itemBuilder: (BuildContext context, int rIndex) {
-          final response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
-
-          return GestureDetector(
-            onTap: () {
-              navigateTo(context, ResponsePage(responseUUID: responseUUIDs[rIndex]));
-            },
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: AnimatedTextKit(
-                  isRepeatingAnimation: false,
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                        speed: const Duration(milliseconds: 50),
-                        textStyle: standardTextStyle(),
-                        "${response.emoji}  ${response.name}"
-                    ),
-                  ],
-                ),
+  /// Displays a widget representing a link to view a generated [response].
+  Widget displayResponseBar(GeneratedResponse response, String responseUUID) {
+    return GestureDetector(
+      onTap: () {
+        navigateTo(context, ResponsePage(responseUUID: responseUUID));
+      },
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: AnimatedTextKit(
+            isRepeatingAnimation: false,
+            animatedTexts: [
+              TypewriterAnimatedText(
+                  speed: const Duration(milliseconds: 50),
+                  textStyle: standardTextStyle(),
+                  "${response.emoji}  ${response.name}"
               ),
-            ),
-          );
-        }
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget displayResponseList(Map<String, dynamic> formJson, List<String> responseUUIDs) {
+  /// Displays a [ListView] under a form bar widget displaying all of its
+  /// associated responses [responseUUIDs].
+  Widget displayResponseListView(bool responseListViewIsCollapsed, List<String> responseUUIDs) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Align(
@@ -120,14 +141,21 @@ class _HomePageState extends State<HomePage> {
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.90,
           child: Collapsible(
-            collapsed: !responseListViewStatuses[formJson]!,
+            collapsed: responseListViewIsCollapsed,
             fade: true,
             curve: Curves.easeInOut,
             axis: CollapsibleAxis.vertical,
             child: FadeInDown(
-                from: 10,
-                duration: const Duration(milliseconds: 200),
-                child: displayResponseBar(responseUUIDs)
+              from: 10,
+              duration: const Duration(milliseconds: 200),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: responseUUIDs.length,
+                itemBuilder: (BuildContext context, int rIndex) {
+                  final GeneratedResponse response = GeneratedResponse.fromJson(box.read(responseUUIDs[rIndex]));
+                  return displayResponseBar(response, responseUUIDs[rIndex]);
+                }
+              )
             ),
           ),
         ),
@@ -135,27 +163,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void deleteForm(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
-    // remove this form
+  /// Deletes a form from the [GetStorage] file system, as well as all associated
+  /// generated responses.
+  void deleteForm(GeneratedForm generatedForm, List<String> responseUUIDs) {
+    // Remove this form
     box.remove(generatedForm.uuid);
 
-    // remove this form from saved_forms
+    // Remove this form from saved_forms
     List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
     savedForms.remove(generatedForm.uuid);
     box.write("SAVED_FORMS", savedForms);
 
-    // remove all responses related to this form
+    // Remove all responses related to this form
     for (String responseUUID in responseUUIDs) {
       box.remove(responseUUID);
     }
 
-    // remove the list of responses
+    // Remove the list of responses
     box.remove("${generatedForm.uuid}/responses");
 
+    // Refresh the data
     fetchSavedDataSetState();
   }
 
-  void displayFormDeletionDialog(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
+  /// Displays a dialog asking the user if they would like to delete a form.
+  void displayFormDeletionDialog(GeneratedForm generatedForm, List<String> responseUUIDs) {
     showDialog(
       context: context,
       builder: (context) => FluidDialog(
@@ -164,62 +196,60 @@ class _HomePageState extends State<HomePage> {
           alignment: Alignment.center, //Aligns the dialog to the bottom left.
           builder: (context) => Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FadeIn(
-                    child: Text(
-                        style: standardTextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FadeIn(
+                  child: Text(
+                      style: standardTextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      "Form Deletion"
+                  ),
+                ),
+                FadeIn(
+                  child: Text(
+                      textAlign: TextAlign.center,
+                      style: standardTextStyle(),
+                      "Do you want to delete ${generatedForm.emoji} ${generatedForm.name}? This will also delete all associated with it."
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          deleteForm(generatedForm, responseUUIDs);
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green
                         ),
-                        "Form Deletion"
-                    ),
-                  ),
-                  FadeIn(
-                    child: Text(
-                        textAlign: TextAlign.center,
-                        style: standardTextStyle(),
-                        "Do you want to delete ${generatedForm.emoji} ${generatedForm.name}? This will also delete all associated with it."
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            deleteForm(formJson, generatedForm, responseUUIDs);
-                            Navigator.of(context).pop();
-                          },
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green
+                        child: Text(
+                          style: standardTextStyle(
+                            color: Colors.white
                           ),
-                          child: Text(
+                          "Go ahead"
+                        )
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent
+                        ),
+                        child: Text(
                             style: standardTextStyle(
-                              color: Colors.white
+                                color: Colors.white
                             ),
-                            "Go ahead"
-                          )
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent
-                          ),
-                          child: Text(
-                              style: standardTextStyle(
-                                  color: Colors.white
-                              ),
-                              "Nevermind"
-                          )
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                            "Nevermind"
+                        )
+                    ),
+                  ],
+                ),
+              ],
             ),
           ), // This can be any widget.
         ),
@@ -227,19 +257,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Displays a widget representing and linking to a [GeneratedForm].
   Widget displayFormBar(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
     return GestureDetector(
       onTap: () {
         navigateTo(context, ViewForm(generatedForm: generatedForm));
       },
       onLongPress: () {
-        displayFormDeletionDialog(formJson, generatedForm, responseUUIDs);
+        displayFormDeletionDialog(generatedForm, responseUUIDs);
       },
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
             gradient: LinearGradient(
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
@@ -285,6 +316,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Creates a widget that is either a [ListView] containing all generated forms
+  /// or a message telling the user to start creating forms.
   Widget getMainBody() {
     if (displayForms.isNotEmpty) {
       return ListView.builder(
@@ -303,7 +336,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 children: [
                   displayFormBar(formJson, generatedForm, responseUUIDs),
-                  displayResponseList(formJson, responseUUIDs)
+                  displayResponseListView(!responseListViewStatuses[formJson]!, responseUUIDs)
                 ],
               ),
             );
@@ -346,7 +379,7 @@ class _HomePageState extends State<HomePage> {
         child: FloatingActionButton(
           child: const Icon(Icons.add),
           onPressed: () {
-            navigateTo(context, CreateForm());
+            navigateTo(context, const CreateForm());
           },
         ),
       ),

@@ -1,10 +1,10 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:form_app/generated_response.dart';
+import 'package:form_app/forms/generated_response.dart';
 import 'package:get_storage/get_storage.dart';
 
-import 'misc.dart';
+import '../misc.dart';
 
 class ResponsePage extends StatefulWidget {
   ResponsePage({super.key, required this.responseUUID});
@@ -16,16 +16,26 @@ class ResponsePage extends StatefulWidget {
 }
 
 class _ResponsePageState extends State<ResponsePage> {
+  /// The [GeneratedResponse] to display on this page.
   late GeneratedResponse response;
-  late final box;
+
+  /// A reference to the [GetStorage] filesystem.
+  late final GetStorage box;
 
   @override
   initState() {
     box = GetStorage();
 
+    // Attempt to read from the box.
     final responseJSON = box.read(widget.responseUUID);
+
+    // If we can't find it, tell the user that it's a dead link.
     if (responseJSON == null) {
-      response = GeneratedResponse(name: "ERROR", emoji: "X", body: "NO RESPONSE");
+      response = GeneratedResponse(
+        name: "Sorry!",
+        emoji: "X",
+        body: "We couldn't fetch this response. Try creating another one."
+      );
     } else {
       response = GeneratedResponse.fromJson(responseJSON);
       response.body = response.body.replaceAll("\\n", "\n");
