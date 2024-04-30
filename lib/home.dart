@@ -95,15 +95,9 @@ class _HomePageState extends State<HomePage> {
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: AnimatedTextKit(
-                  isRepeatingAnimation: false,
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                        speed: const Duration(milliseconds: 50),
-                        textStyle: standardTextStyle(),
-                        "${response.emoji}  ${response.name}"
-                    ),
-                  ],
+                child: Text(
+                  style: standardTextStyle(),
+                  "${response.emoji}  ${response.name}"
                 ),
               ),
             ),
