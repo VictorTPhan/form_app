@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:form_app/pages/splash_screen.dart';
+import 'package:form_app/splash_screen.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'home.dart';
 
 main() async {
   await GetStorage.init();
@@ -14,16 +15,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var baseTheme = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2A00FF)),
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       useMaterial3: true,
     );
 
     return MaterialApp(
-      title: 'Formerly',
+      title: 'Flutter Demo',
       theme: baseTheme.copyWith(
         textTheme: GoogleFonts.workSansTextTheme(baseTheme.textTheme),
       ),
-      home: const SplashPage(),
+      home: SplashPage(),
     );
   }
 }
