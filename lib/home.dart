@@ -44,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void fetchSavedData() {
+    delay = -delayIncrease;
     displayForms.clear();
     responseListViewStatuses.clear();
 
