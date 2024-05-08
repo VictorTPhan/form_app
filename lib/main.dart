@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:form_app/splash_screen.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home.dart';
 
 main() async {
   await GetStorage.init();

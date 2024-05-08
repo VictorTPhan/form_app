@@ -16,18 +16,27 @@ class ResponsePage extends StatefulWidget {
 }
 
 class _ResponsePageState extends State<ResponsePage> {
+  /// The [GeneratedResponse] to display on this page.
   late GeneratedResponse response;
+
+  /// A reference to the phone's storage.
   late final box;
 
   @override
   initState() {
+    // Grab a reference to this phone's storage.
     box = GetStorage();
 
+    // Attempt to read the response UUID.
     final responseJSON = box.read(widget.responseUUID);
+
+    // If there's no response, show dummy text.
     if (responseJSON == null) {
       response = GeneratedResponse(name: "ERROR", emoji: "X", body: "NO RESPONSE");
     } else {
       response = GeneratedResponse.fromJson(responseJSON);
+
+      // Remove anything that would mess with markdown formatting.
       response.body = response.body.replaceAll("\\n", "\n");
     }
   }

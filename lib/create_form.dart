@@ -22,6 +22,9 @@ class CreateForm extends StatefulWidget {
 }
 
 class _CreateFormState extends State<CreateForm> {
+
+  /// A list of examples that are used to fill in as placeholders
+  /// for the TextFields on this screen.
   final List<Map<String, String>> examples = [
     {
       "goal": "cook some food for a potluck",
@@ -75,13 +78,27 @@ class _CreateFormState extends State<CreateForm> {
     },
   ];
 
+  /// The [GlobalKey] used by the form on this screen to validate the form.
   final formKey = GlobalKey<FormState>();
+
+  /// A boolean representing if the form on this screen is validated.
   bool formValidated = false;
+
+  /// A map representation of the responses in this form. It is updated whenever
+  /// the user modifies the form by inputting something.
   UnmodifiableMapView<String, dynamic> currentFormResponse = UnmodifiableMapView({});
+
+  /// The example placeholder text chosen to fill in the TextFields on this page.
   late Map<String, String> example = examples[Random().nextInt(examples.length)];
+
+  /// The amount of milliseconds to increase the delay by every time a widget
+  /// is loaded.
   int delayIncrease = 200;
+
+  /// The amount of milliseconds to delay a widget by when it loads.
   late int delay = -delayIncrease;
 
+  /// Takes the [child] and houses it within a [FadeIn] widget with a delay.
   Widget createWidgetWithDelay(Widget child) {
     delay += delayIncrease;
 
@@ -94,6 +111,8 @@ class _CreateFormState extends State<CreateForm> {
     );
   }
 
+  /// Generates a question for a [Question]'s question field and the [formWidget]
+  /// associated with the question.
   Widget createFormQuestion(String question, Widget formWidget) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,11 +132,13 @@ class _CreateFormState extends State<CreateForm> {
     );
   }
 
+  /// Determines if the form on this page is filled in properly.
   bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
+    // Look through every question.
     for (String question in responses.keys) {
       var response = responses[question];
-      
-      // special case -- "FORM_LENGTH" != 0
+
+      // There is a special case "FORM_LENGTH" cannot be 0 or not a number
       if (question == "FORM_LENGTH") {
         dynamic parseResult = int.tryParse(response);
         if (parseResult == null || parseResult <= 0) {
@@ -125,6 +146,7 @@ class _CreateFormState extends State<CreateForm> {
         }
       }
 
+      // Generally, just check if the question is filled in
       if (response is String && response.isEmpty ||
           response is Set && response.isEmpty) {
         return false;
@@ -133,9 +155,11 @@ class _CreateFormState extends State<CreateForm> {
     return true;
   }
 
+  /// Sends a POST request to the Formerly server to generate a form.
   Future<void> sendPostRequest() async {
     var url = Uri.parse('https://form-app-server-zibv.onrender.com/create_form/');
 
+    // Create the payload.
     var payload = {
       "GOAL": currentFormResponse["GOAL"].toString(),
       "PROBLEM": currentFormResponse["PROBLEM"].toString(),
@@ -155,10 +179,8 @@ class _CreateFormState extends State<CreateForm> {
         body: body,
       );
       if (response.statusCode == 200) {
+        // Decode the response and add any additional fields.
         var jsonResponse = json.decode(response.body);
-
-        print(jsonResponse);
-
         jsonResponse["GOAL"] = currentFormResponse["GOAL"].toString();
         jsonResponse["PROBLEM"] = currentFormResponse["PROBLEM"].toString();
         jsonResponse["FORM_LENGTH"] = currentFormResponse["FORM_LENGTH"].toString();
@@ -166,22 +188,26 @@ class _CreateFormState extends State<CreateForm> {
         jsonResponse["ALLOWED_TYPES"] = currentFormResponse["ALLOWED_TYPES"].toList();
         jsonResponse["COLOR_INDEX"] = Random().nextInt(gradients.length);
 
-        // create a UUID to reference this by
+        // Create a UUID to reference this response.
         var uuidGenerator = const Uuid();
         var uuid = uuidGenerator.v4();
         jsonResponse["UUID"] = uuid.toString();
 
+        // Get a reference to the phone's storage.
         final box = GetStorage();
-        // save a copy of this form on disk casted as a Map
+
+        // Save a copy of this form on disk casted as a Map
         box.write(uuid.toString(), jsonResponse as Map<String, dynamic>);
 
-        // add a reference to this entry in a list
+        // Add a reference to this entry in a list of all forms.
         List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
         savedForms.add(uuid.toString());
         box.write("SAVED_FORMS", savedForms);
 
+        // Generate a [GeneratedForm] from the responses.
         var generatedForm = GeneratedForm.fromJson(jsonResponse);
 
+        // Navigate to the [ViewForm] page.
         navigateTo(context, ViewForm(generatedForm: generatedForm));
       } else {
         print('Request failed with status: ${response.statusCode}');

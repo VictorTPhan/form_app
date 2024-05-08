@@ -1,16 +1,8 @@
-# form_app
+# Formerly Frontend
 
-An app that generates forms using ChatGPT.
+An app that generates forms using ChatGPT to make the experience of talking to generative AI models
+a lot more productive, with (hopefully) less time wasted.
 
-## Getting Started
+To see a demo of this app, see [here](https://www.youtube.com/watch?v=Q1_V2hC1i9s).
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+To see the backend of this app, see [here](https://github.com/VictorTPhan/form_app_server).

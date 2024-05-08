@@ -1,8 +1,6 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+/// A helper function to reduce boilerplate code for switching to another screen.
 void navigateTo(BuildContext context, StatefulWidget newScreen) {
   Navigator.of(context).push(
     MaterialPageRoute(
@@ -11,6 +9,7 @@ void navigateTo(BuildContext context, StatefulWidget newScreen) {
   );
 }
 
+/// A helper function to return a standard styled [TextStyle], with optional parameters.
 TextStyle standardTextStyle(
     {double fontSize = 16,
     FontWeight fontWeight = FontWeight.normal,
@@ -25,6 +24,7 @@ TextStyle standardTextStyle(
   );
 }
 
+/// A hardcoded list of gradients used to make the app snazzier.
 const gradients = [
   [Color(0xFFFFAA48), Color(0xFFFF0073)],
   [Color(0xFF00FF3A), Color(0xFF00796D)],

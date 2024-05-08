@@ -27,15 +27,29 @@ class ViewForm extends StatefulWidget {
 }
 
 class _ViewFormState extends State<ViewForm> {
+  /// The [GlobalKey] used by the form on this screen to validate the form.
   final formKey = GlobalKey<FormState>();
+
+  /// A boolean representing if the form on this screen is validated.
   bool formValidated = false;
+
+  /// A [String] representation of the JSON of this form.
   String currentFormResponseString = "";
+
+  /// The amount of milliseconds to increase the delay by every time a widget
+  /// is loaded.
   int delayIncrease = 200;
+
+  /// The amount of milliseconds to delay a widget by when it loads.
   late int delay = -delayIncrease;
 
+  /// Determines if the form on this page is filled in properly.
   bool isFormValidated(UnmodifiableMapView<String, dynamic> responses) {
+    // Look through every question.
     for (String question in responses.keys) {
       var response = responses[question];
+
+      // Generally, just check if the question is filled in
       if (response is String && response.isEmpty ||
           response is Set && response.isEmpty) {
         return false;
@@ -44,6 +58,7 @@ class _ViewFormState extends State<ViewForm> {
     return true;
   }
 
+  /// Takes the [child] and houses it within a [FadeIn] widget with a delay.
   Widget createWidgetWithDelay(Widget child) {
     delay += delayIncrease;
 
@@ -56,6 +71,8 @@ class _ViewFormState extends State<ViewForm> {
     );
   }
 
+  /// Generates a question for a [Question]'s question field and the [formWidget]
+  /// associated with the question.
   Widget createFormQuestion(String question, Widget formWidget) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,6 +92,8 @@ class _ViewFormState extends State<ViewForm> {
     );
   }
 
+  /// Parses a [Question] object by its [index] within the questions list in the
+  /// [generatedForm] and builds a [Widget] to display it.
   Widget buildQuestion(index) {
     Question currentQuestion = widget.generatedForm.questions[index];
 
@@ -140,9 +159,11 @@ class _ViewFormState extends State<ViewForm> {
     );
   }
 
+  /// Sends a POST request to the Formerly server to generate a form response.
   Future<void> sendPostRequest() async {
     var url = Uri.parse('https://form-app-server-zibv.onrender.com/submit_form/');
 
+    // Create the payload.
     var payload = {
       "GOAL": widget.generatedForm.goal,
       "PROBLEM": widget.generatedForm.problem,
@@ -163,22 +184,23 @@ class _ViewFormState extends State<ViewForm> {
       if (response.statusCode == 200) {
         var jsonResponse = json.decode(response.body);
 
+        // Get a reference to the phone's storage.
         final box = GetStorage();
 
-        // generate a UUID for the response
+        // Create a UUID to reference this response.
         var uuidGenerator = const Uuid();
         var responseUUID = uuidGenerator.v4();
 
-        // save the response
+        // Save the response into the phone's storage.
         box.write(responseUUID.toString(), jsonResponse);
 
-        // add this response a list referencing this form
+        // Add this response UUID to a list of all responses.
         String address = "${widget.generatedForm.uuid}/responses";
         List<dynamic> formResponses = box.read(address) ?? [];
         formResponses.add(responseUUID.toString());
         box.write(address, formResponses);
 
-        // view the response
+        // View the response.
         navigateTo(context, ResponsePage(responseUUID: responseUUID));
       } else {
         print('Request failed with status: ${response.statusCode}');

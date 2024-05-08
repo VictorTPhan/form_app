@@ -1,14 +1,8 @@
-import 'dart:io';
-
 import 'package:animate_do/animate_do.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:collapsible/collapsible.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:fluid_dialog/fluid_dialog.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:form_app/create_form.dart';
 import 'package:form_app/misc.dart';
 import 'package:form_app/response.dart';
@@ -26,15 +20,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Map of JSON -> List<String>
-  // Form JSON -> Response UUIDs
+  /// The forms that we want to display on this page. Specifically, this is...
+  ///
+  /// A Map of JSON -> List<String>
+  ///
+  /// Otherwise, you can think of this as...
+  ///
+  /// A Form JSON -> A list of response UUIDs for that form
   Map<Map<String, dynamic>, List<String>> displayForms = {};
 
-  // Used to keep track of which form response ListViews are being shown
+  /// A [Map] used to keep track of which form response ListViews are being shown
   Map<Map<String, dynamic>, bool> responseListViewStatuses = {};
 
+  /// A reference to the phone's storage.
   late final box;
+
+  /// The amount of milliseconds to increase the delay by every time a widget
+  /// is loaded.
   int delayIncrease = 200;
+
+  /// The amount of milliseconds to delay a widget by when it loads.
   late int delay = -delayIncrease;
 
   @override
@@ -43,28 +48,37 @@ class _HomePageState extends State<HomePage> {
     fetchSavedData();
   }
 
+  /// Fetches the forms and responses from the phone's storage.
   void fetchSavedData() {
+    // Reset all of the data on this page
     delay = -delayIncrease;
     displayForms.clear();
     responseListViewStatuses.clear();
 
-    // add a reference to this entry in a list
+    // Attempt to grab a list of saved forms.
     List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
-    // print("SAVED FORMS " + savedForms.toString());
-
     List<String> unreachableUUIDs = [];
+
+    // Loop through all of the form UUIDs.
     for (String formUUID in savedForms) {
+      // Attempt to read the form UUID to get its JSON.
       var searchResult = box.read(formUUID);
+
+      // If we can't reach it, it's a dud.
       if (searchResult == null) {
         unreachableUUIDs.add(formUUID);
         continue;
       } else {
+        // Update our page data with the form's information
         displayForms[searchResult] = [];
         responseListViewStatuses[searchResult] = false;
 
         List<dynamic> responses = box.read("$formUUID/responses") ?? [];
         for (String responseUUID in responses) {
+          // Attempt to read the response UUIDs.
           var responseExists = box.read(responseUUID);
+
+          // Add each response we can successfully read to displayForms
           if (responseExists != null){
             displayForms[searchResult]!.add(responseUUID);
           } else {
@@ -73,15 +87,17 @@ class _HomePageState extends State<HomePage> {
         }
       }
     }
-    // print("UNREACHABLE UUIDS: " + unreachableUUIDs.toString());
   }
 
+  /// A function called once the page is loaded to reload everything.
   Future<void> fetchSavedDataSetState() async {
     setState(() {
       fetchSavedData();
     });
   }
 
+  /// Generates a [ListView] of all of the responses for a form from its
+  /// [responseUUIDs].
   Widget displayResponseBar(List<String> responseUUIDs) {
     return ListView.builder(
         shrinkWrap: true,
@@ -107,6 +123,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Frames the [ListView] of response widgets into a collapsible and padded [Widget].
+  ///
+  /// [formJson] - The JSON object representing the form associated to the responses.
+  ///
+  /// [responseUUIDs] - The list of responses to display.
   Widget displayResponseList(Map<String, dynamic> formJson, List<String> responseUUIDs) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -130,26 +151,41 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Deletes a form and all of its associated responses.
+  ///
+  /// [formJson] - The JSON object representing the form to delete.
+  ///
+  /// [generatedForm] - the [GeneratedForm] representation of the [formJSON].
+  ///
+  /// [responseUUIDs] - The list of responses associated with the form to delete.
   void deleteForm(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
-    // remove this form
+    // Remove this form from storage.
     box.remove(generatedForm.uuid);
 
-    // remove this form from saved_forms
+    // Remove this form from the list of saved forms.
     List<dynamic> savedForms = box.read("SAVED_FORMS") ?? [];
     savedForms.remove(generatedForm.uuid);
     box.write("SAVED_FORMS", savedForms);
 
-    // remove all responses related to this form
+    // Remove all responses related to this form.
     for (String responseUUID in responseUUIDs) {
       box.remove(responseUUID);
     }
 
-    // remove the list of responses
+    // Remove the list of responses.
     box.remove("${generatedForm.uuid}/responses");
 
+    // Reload the page.
     fetchSavedDataSetState();
   }
 
+  /// Displays the deletion form alert dialog.
+  ///
+  /// [formJson] - The JSON object representing the form to delete.
+  ///
+  /// [generatedForm] - the [GeneratedForm] representation of the [formJSON].
+  ///
+  /// [responseUUIDs] - The list of responses associated with the form to delete.
   void displayFormDeletionDialog(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
     showDialog(
       context: context,
@@ -222,6 +258,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Displays a widget representing a form that the user has made and saved.
+  ///
+  /// [formJson] - The JSON object representing the form.
+  ///
+  /// [generatedForm] - the [GeneratedForm] representation of the [formJSON].
+  ///
+  /// [responseUUIDs] - The list of responses associated with the form.
   Widget displayFormBar(Map<String, dynamic> formJson, GeneratedForm generatedForm, List<String> responseUUIDs) {
     return GestureDetector(
       onTap: () {
@@ -280,6 +323,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Displays all of the user's saved forms in a [ListView].
+  /// If there are no forms saved, we show a notice [Text] instead.
   Widget getMainBody() {
     if (displayForms.isNotEmpty) {
       return ListView.builder(
